@@ -67,6 +67,8 @@ evaluation/results/*.json
 !evaluation/results/.gitkeep
 
 # --- Demo video intermediates ---
+# Raw browser captures and chapter markers are generated per recording run.
+demo/record/
 # Rendered frames and mux intermediates are generated; the MP4 and the captured
 # transcripts are the deliverables and are committed.
 demo/frames/

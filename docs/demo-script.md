@@ -1,50 +1,69 @@
-# Demo script — AI Engineering Change Auditor
+# Demo script — AI Engineering Change Auditor (live product demonstration)
 
-**Runtime:** 2:54 (target: under 3 minutes)  
-**Video:** `demo/ai-engineering-change-auditor-demo.mp4` (1920x1080, H.264/AAC)  
-**Footage:** every frame is unedited output captured by `demo/capture_footage.py`,
-which drives the real backend over HTTP and executes real tests. Nothing on screen
-is typed by hand, mocked, or simulated.
+**Runtime:** 2:41 (target: under 3 minutes)
+**Video:** `demo/ai-engineering-change-auditor-live-demo.mp4` (1920×1080, H.264/AAC)
+**Footage:** a real browser session against the real running product, captured by
+`demo/record_walkthrough.py` (Playwright, headless Chromium, screen recording).
+Every click, poll, confirmation dialog and pytest execution on screen actually
+happened: the recorder drives `http://127.0.0.1:3000` (Next.js production build)
+which proxies `/api/*` to the FastAPI backend, which executes real `pytest`
+invocations in isolated workspaces. Nothing is typed by hand, mocked, scripted
+into the DOM, or simulated.
+
+**Honesty gate:** the recorder asserts, per chapter, that the live UI really shows
+what the chapter claims (`see(...)`); if the expected text never appears the run
+aborts with an explanation instead of recording a demonstration of something that
+did not happen. Chapter start offsets are written to `demo/record/markers.json`
+from wall-clock time as each narration clip begins, so the voice-over is locked to
+what is on screen.
 
 ## Reproducing the video
 
 ```bash
-# 1. capture real footage (drives the API, runs pytest for real)
-PYTHONPATH=backend python3 demo/capture_footage.py
+# 0. start the product for real
+cd backend  && PYTHONPATH=. python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+cd frontend && npm run build && npx next start -H 0.0.0.0 -p 3000 &
 
-# 2. narration clips live in demo/audio/n01.mp3 .. n10.mp3
+# 1. record the live walkthrough (aborts if the UI contradicts the script)
+python3 demo/record_walkthrough.py          # writes demo/record/*.webm + markers.json
 
-# 3. render and mux
-python3 demo/make_video.py
+# 2. mux the narration (demo/audio/live01.mp3 .. live10.mp3) at the recorded offsets
+python3 demo/mux_live.py                    # -> demo/ai-engineering-change-auditor-live-demo.mp4
 ```
+
+A fresh database is recommended so the history shown at the end contains exactly
+the audit performed in the video (`rm -f var/auditor.db*` before starting).
 
 ## Timeline
 
-| # | Segment | On-screen evidence | Narration |
-|---|---------|--------------------|-----------|
-| 1 | **Introduction** (0:00) | `title` | Can we trust a proposed code change, and what evidence proves it works? This is the AI Engineering Change Auditor. |
-| 2 | **The change under audit** (0:07) | `02_the_change` | A real merge request. One line changed: apply_discount now returns price times discount_rate. Its own docstring says it must return the FINAL price — a thousand at twenty percent should be eight hundred. It returns two hundred. And all sixteen existing tests still pass. |
-| 3 | **Capability and Duo honesty** (0:28) | `03_health, 04_duo_honesty` | The system first reports what it can actually do — database, isolation tier, GitLab, Duo — probed, never assumed. The Duo Agent Platform integration is mandatory, so its absence is stated plainly: no credentials here, the missing prerequisite named, and the audit falls back to a clearly-labelled local deterministic engine. Nothing is ever passed off as Duo. |
-| 4 | **Start the audit** (0:55) | `05_select_mr, 06_audit_runs` | We select the merge request and start the audit. It runs asynchronously, so a long investigation never depends on one open HTTP request, and every stage writes to a durable provenance trail. |
-| 5 | **Findings and evidence** (1:09) | `07_findings` | A hypothesis is not a finding until the repository corroborates it. Each evidence item declares how it can be checked, and the investigator verifies it independently. Facts stay separate from hypotheses, and confidence is explicitly uncalibrated — there is no invented accuracy score anywhere. |
-| 6 | **Reproduce by execution** (1:29) | `08_generated_test, 09_reproduced` | From the declared contract it generates a reproduction test, then executes it against the original revision in an isolated workspace with network disabled. Pytest really exits one. Four assertions fail — and they are the intended ones. The defect is now reproduced, not merely suspected. |
-| 7 | **The human approval gate** (1:49) | `10_patch_gate` | A minimal patch is proposed, with its side effects analysed. Verification is refused with HTTP 409 until a human approves. A generated patch is never reported as a fix. |
-| 8 | **Verified by execution** (2:02) | `11_verified` | After approval, four separate pytest runs execute: baseline reproduction fails, baseline regression passes, post-fix reproduction passes, post-fix regression passes. Only now is the fix verified for tested behaviour — with a plain statement of what that does not prove. |
-| 9 | **Report and history** (2:23) | `12_report, 13_history` | The report gives an explained outcome label, the exact revisions, remaining risks and its own limitations. Everything persists: restart the application and the audit is still there. |
-| 10 | **CI validation and close** (2:36) | `14_flow_validation, 15_acceptance, end` | The Duo flow definition is validated in CI, and a missing flow fails the build. Finally, the mandatory acceptance test: fourteen stages, ninety-one checks, zero failures. Every claim in this video came from a real execution. |
+Narration column summarises the spoken audio (`demo/audio/liveNN.mp3`); timings are
+the measured chapter start offsets from the recorded run.
+
+| # | Start | On screen (live UI) | Narration (summary) |
+|---|-------|---------------------|---------------------|
+| 1 | 0:01 | **Dashboard**, empty: `No audits yet`, all counters read from persisted rows (0), footer chips `api ok`, `isolation linux_namespace`, `duo unavailable`, `demo fixture ready` | What the product answers — can we trust this change, and what executed evidence proves it — and that every number on screen is read from the database, never estimated. |
+| 2 | 0:16 | **Project Explorer** → merge request `feature/refactor-discount → main` → confirmation dialog `yes, start the audit` → **Audit Workspace** with live event stream | Picking the project and the merge request, the explicit confirmation, and the fact that the audit runs asynchronously — a long investigation never depends on one open HTTP request. |
+| 3 | 0:32 | Workspace streaming to `completed 100%`: durable provenance trail (`change_investigated`, `test_executed`, `patch_proposed`, `report_generated`, …), session panel with engine `local_deterministic` and both commit SHAs | The provenance trail: who did what, in which stage, with which engine and against which exact revisions — and that the audit completed while we watched it poll. |
+| 4 | 0:43 | **Findings Explorer**: F-5-001 `critical / reproduced`, expected behaviour (800) vs suspected behaviour (200), evidence items `diff_hunk`, `source_excerpt`, `contract_quote` with `corroborated 9 / refuted 0` | A hypothesis only becomes a finding once the repository corroborates it; each evidence item declares how it can be checked independently; confidence is never invented. |
+| 5 | 1:05 | Click `generate + run reproduction test` → confirm `execute in isolation` → real pytest result appears: `exit=1 · 2/6 passed · status=failed · isolation=linux_namespace` | The reproduction test is generated from the declared contract and executed against the *original* revision with the network off; pytest really exits 1 and the intended assertions fail — reproduced, not suspected. |
+| 6 | 1:24 | **Patch Review** P-5-001: proposed correction diff, side-effect analysis, decision record; confirm `yes, approve` with a reviewer note | A minimal patch is proposed and analysed, and nothing happens to any branch until a human approves; a generated patch is never reported as a fix. |
+| 7 | 1:42 | Confirm `run verification now` → `Executed verification runs`: `baseline_reproduction exit 1`, `baseline_regression`, `post_fix_reproduction`, `post_fix_regression` → badge `verified_for_tested_behavior` | Verification means four separate pytest invocations in isolated workspaces: the test fails before the fix, the suite was green before, the test passes after, the suite stays green after. Only then is the fix "verified for tested behaviour". |
+| 8 | 1:59 | **Verification Results**: every run bound to patch SHA, source/target commit SHAs, isolation tier, duration, passed/total | What verification does and does not prove: runs are bound to exact revisions and the recorded isolation tier, and the scope statement says so in plain language. |
+| 9 | 2:11 | **Final report**: explained outcome label `defect_reproduced_and_fix_verified`, counts, remaining risks, recommended next steps, the report's own limitations | The report explains its outcome instead of asserting it, and lists its own limitations and remaining risks — including what no test in this audit can prove. |
+| 10 | 2:24 | **Audit History**: exactly one session, `completed`, engine `local_deterministic`, 2 findings, 6 runs; sidebar chip `duo unavailable` | Everything persists across restarts; and the standing honesty note — the mandatory GitLab Duo Agent Platform integration is real but cannot run here without credentials, so this audit is labelled local deterministic everywhere and no Duo result is simulated. |
 
 ## What the demo proves
 
-The distinction the whole project rests on:
+The distinction the whole project rests on, exercised live in the browser:
 
 ```
 AI hypothesis  ->  evidence-backed finding  ->  reproduced defect
-               ->  proposed fix  ->  VERIFIED BY EXECUTION
+               ->  proposed fix  ->  human approval  ->  VERIFIED BY EXECUTION
 ```
 
 A generated patch is **never** reported as a fix. Verification is refused with
-HTTP 409 until a human approves, and the `verified_for_tested_behavior` outcome
-is only reachable after four separate pytest runs have actually executed:
+HTTP 409 until a human approves, and `verified_for_tested_behavior` is only
+reachable after four separate pytest runs have actually executed:
 
 | Run | Purpose | Result in the demo |
 |-----|---------|--------------------|
@@ -56,9 +75,23 @@ is only reachable after four separate pytest runs have actually executed:
 ## Honest limitations shown on screen
 
 * GitLab Duo Agent Platform is **unavailable** in this environment (no credentials).
-  The flow YAML and Flows API client are real and validated in CI, but the run shown
-  uses the local deterministic engine and is labelled `local_deterministic` throughout.
-* Isolation is the `linux_namespace` tier, not a VM. The report says so.
-* `verified_for_tested_behavior` covers the tested behaviour only — the report refuses
-  to claim whole-application correctness.
-* No accuracy percentage is quoted anywhere, because none has been measured.
+  The Flow Registry v1 YAML, the agent config and the Flows API client are real and
+  validated in CI, but the run shown uses the local deterministic engine and is
+  labelled `local_deterministic` in the session panel, the history and the report.
+  The dashboard and workspace say so in a warning banner; nothing is passed off as Duo.
+* Isolation here is `linux_namespace` (unshare + rlimits, no network), which the
+  security documentation explicitly describes as **not** a hard security boundary;
+  the Docker executor is used automatically when Docker is present.
+* The audited repository is the bundled deterministic fixture
+  (`examples/discount-service`), because no GitLab instance is reachable. With
+  `GITLAB_URL`/`GITLAB_TOKEN` set, the same screens drive real projects and MRs.
+* Confidence is deliberately uncalibrated: corroborated/refuted evidence counts are
+  shown instead of invented accuracy percentages.
+
+## Appendix — earlier terminal/slideshow capture
+
+`demo/ai-engineering-change-auditor-demo.mp4` (2:54) is the earlier API-driven
+capture rendered as titled slides over real terminal footage
+(`demo/capture_footage.py` + `demo/make_video.py`, narration `demo/audio/n01..n10.mp3`).
+It is kept as an appendix only; the live product demonstration above is the
+primary demo video.

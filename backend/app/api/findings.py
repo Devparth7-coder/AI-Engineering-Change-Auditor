@@ -198,7 +198,12 @@ def generate_test(
         "executed": True,
         "generated_test": generated.to_dict(),
         "test_source": generated.content,
-        "repro_outcome": run.repro_outcome.value if run.repro_outcome else None,
+        # TestRun has no repro_outcome column; the outcome lives on the Finding
+        # (set by _execute_reproduction). Reading it off the run raised
+        # AttributeError and turned a legitimate action into a 500.
+        "repro_outcome": (
+            finding.repro_outcome.value if finding.repro_outcome else None
+        ),
         "test_run": run_to_response(run).model_dump(),
         "finding": finding_to_response(finding).model_dump(),
     }
