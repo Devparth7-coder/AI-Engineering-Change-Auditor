@@ -1,0 +1,64 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 3 - RUN THE AUDIT ASYNCHRONOUSLY                                                                  │
+│ Long-running work does not depend on one open HTTP request                                             │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ curl -s -X POST /api/audits \
+      -d '{"project_id": 1, "merge_request_iid": 1, "source_branch": "feature/refactor-discount", "target_branch": "main", "mode": "local_demo", "auto_start": true}'
+
+HTTP 201
+{
+  "id": 1,
+  "project_id": 1,
+  "merge_request_iid": 1,
+  "merge_request_title": "",
+  "source_branch": "feature/refactor-discount",
+  "target_branch": "main",
+  "source_commit_sha": "",
+  "target_commit_sha": "",
+  "status": "queued",
+  "stage": "queued",
+  "progress_pct": 5,
+  "mode": "local_demo",
+  "engine": "local_deterministic",
+  "duo_session_id": null,
+  "duo_web_url": "",
+  "duo_availability": {},
+  "started_at": null,
+  "completed_at": null,
+  "error_detail": "",
+  "created_at": "2026-10-26T17:40:16.415344Z",
+  "findings_count": 0,
+  "patches_count": 0,
+  "test_runs_count": 0,
+  "outcome": ""
+}
+
+$ watch -n0.4 'curl -s /api/audits/1'
+  t+ 0.0s  status=queued         stage=queued                 progress=5%
+  t+ 0.4s  status=completed      stage=completed              progress=100%
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE DURABLE PROVENANCE TRAIL                                                                           │
+│ GET /api/audits/1/events                                                                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  seq=  1  audit_created        orchestrator           Audit session created in mode 'local_demo' f
+  seq=  2  audit_started        orchestrator           Audit started in mode 'local_demo'.
+  seq=  3  stage_started        orchestrator           Audit queued for asynchronous execution. Pol
+  seq=  4  context_fetched      orchestrator           Change context fetched: 1 changed file(s), s
+  seq=  5  duo_unavailable      orchestrator           GitLab Duo Agent Platform was NOT used for t
+  seq=  6  stage_completed      change_investigator    Change analysis complete: 2 candidate findin
+  seq=  7  finding_created      change_investigator    F-1-001 [critical] `apply_discount` returns 
+  seq=  8  finding_created      change_investigator    F-1-002 [medium] No test asserts on the chan
+  seq=  9  finding_updated      change_investigator    F-1-001: evidence corroboration -> evidenced
+  seq= 10  finding_updated      change_investigator    F-1-002: evidence corroboration -> hypothesi
+  seq= 11  stage_completed      change_investigator    Investigation complete: 1 finding(s) corrobo
+  seq= 12  test_generated       repair_designer        F-1-001: generated test_audit_f_1_001_apply_
+  seq= 13  test_executed        verification_agent     F-1-001: reproduction test on the ORIGINAL r
+  seq= 14  test_generated       repair_designer        F-1-002: reproduction test NOT generated. Fi
+  seq= 15  stage_completed      repair_designer        Reproduction stage complete: 1 reproduced, 0
+  seq= 16  patch_proposed       repair_designer        P-1-001 proposed for F-1-001 (strategy: rest
+  seq= 17  stage_completed      orchestrator           1 patch proposal(s) awaiting human approval.
+  seq= 18  report_generated     reporting_service      Audit report generated: outcome 'defect_repr
+  seq= 19  audit_completed      orchestrator           Audit completed.

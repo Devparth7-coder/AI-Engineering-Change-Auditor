@@ -1,0 +1,61 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 6 - EXECUTE IT AGAINST THE ORIGINAL REVISION                                                      │
+│ Reproduction means the test really ran and really failed                                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  revision          68cde28c679fd083a56528898c439d6be2b5e85f  (original)
+  isolation         linux_namespace
+  network disabled  True
+  exit code         1
+  tests             6 total / 2 passed / 4 failed
+  intended executed True
+  intended failed   True
+  assertion sig     test_apply_discount_01_documented_example, test_apply_discount_02_derived_from_semantics, test_apply_discount_03_derived_from_semantics, test_apply_discount_04_derived_from_semantics
+  duration          253 ms
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ REAL PYTEST OUTPUT (sanitised)                                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+exit_code=1
+status=failed
+tests: 6 total, 2 passed, 4 failed, 0 skipped, 0 errored
+isolation=linux_namespace network_disabled=True
+note: linux_namespace tier: unshare user+mount(+net) namespaces.
+note: Masked with tmpfs: /home, /root, /etc/ssh.
+note: RLIMIT_CPU/AS/FSIZE/NPROC/CORE applied in the child.
+note: Not a VM: kernel exploits remain a theoretical escape path. Use the container tier for production.
+--- stdout ---
+FFFF..                                                                   [100%]
+=================================== FAILURES ===================================
+__________________ test_apply_discount_01_documented_example ___________________
+
+    def test_apply_discount_01_documented_example():
+        """Documented contract example: For a price of 1000 and a discount of 20% (``discount_rate == 0.20``) the final price must be 800.
+    
+        Expected value provenance: documented_example
+        Source: src/discount_service/pricing.py:33
+        """
+        result = apply_discount(discount_rate=0.2, price=1000.0)
+>       assert result == pytest.approx(800.0), (
+            f"contract requires 800.0, got {result!r}"
+        )
+E       AssertionError: contract requires 800.0, got 200.0
+E       assert 200.0 == 800.0 ± 8.0e-04
+E         
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ FAILURES RECORDED                                                                                      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  failed  audit_tests.test_audit_f_1_001_apply_discount::test_apply_discount_01_documented_example
+            Expected: 800.0 ± 8.0e-04
+  failed  audit_tests.test_audit_f_1_001_apply_discount::test_apply_discount_02_derived_from_semantics
+            Expected: 250.0 ± 2.5e-04
+  failed  audit_tests.test_audit_f_1_001_apply_discount::test_apply_discount_03_derived_from_semantics
+            Expected: 0.0 ± 1.0e-12
+  failed  audit_tests.test_audit_f_1_001_apply_discount::test_apply_discount_04_derived_from_semantics
+            Expected: 650.0 ± 6.5e-04
+
+  finding verification_status -> fix_proposed
+  finding repro_outcome       -> reproduced

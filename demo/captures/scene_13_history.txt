@@ -1,0 +1,23 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 10 - HISTORY IS PRESERVED ACROSS A RESTART                                                        │
+│ The application was shut down and started again                                                        │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  audit status after restart   completed
+  findings after restart       2
+  test runs after restart      5
+  history entries              1
+
+  dashboard (computed from persisted rows, never estimated):
+{
+    "audits": 1,
+    "active_audits": 0,
+    "projects": 1,
+    "findings": 2,
+    "findings_reproduced": 1,
+    "findings_requiring_attention": 0,
+    "patches_pending_approval": 0,
+    "verified_fixes": 1,
+    "test_runs": 5
+}
+  verified_fixes               1

@@ -1,0 +1,50 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE CHANGE UNDER AUDIT                                                                                 │
+│ examples/discount-service - a real git repository                                                      │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ git log --oneline --all --decorate
+68cde28 (feature/refactor-discount) refactor(pricing): simplify discount calculation
+eeacc8c (HEAD -> main) feat(pricing): correct discount contract with regression suite
+
+  main                     eeacc8cf0b65ee938f25e221bfdd3fc21019dc68
+  feature/refactor-discount 68cde28c679fd083a56528898c439d6be2b5e85f
+
+$ git diff main feature/refactor-discount -- src/discount_service/pricing.py
+diff --git a/src/discount_service/pricing.py b/src/discount_service/pricing.py
+index 4a6f8ae..bce96af 100644
+--- a/src/discount_service/pricing.py
++++ b/src/discount_service/pricing.py
+@@ -49,7 +49,8 @@ def apply_discount(price: float, discount_rate: float) -> float:
+     if not validate_discount_rate(discount_rate):
+         raise ValueError("discount_rate must be a fraction in [0, 1]")
+ 
+-    return price * (1 - discount_rate)
++    # simplified: discount is applied directly to the price
++    return price * discount_rate
+ 
+ 
+ def format_price(amount: float) -> str:
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ WHAT THE CONTRACT SAYS vs WHAT THE CODE DOES                                                           │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  The docstring declares: 'Return the FINAL price payable after applying
+  discount_rate' with a worked example  price=1000, discount_rate=0.2 -> 800.0
+
+$ python -c 'from discount_service.pricing import apply_discount; ...'
+  target  (main)                             apply_discount(1000.0, 0.20) -> 800.0
+  source  (feature/refactor-discount)        apply_discount(1000.0, 0.20) -> 200.0
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE PRE-EXISTING TEST SUITE ON THE DEFECTIVE BRANCH                                                    │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ git archive feature/refactor-discount | tar -x -C /tmp/ws && cd /tmp/ws
+$ python -m pytest tests/
+................                                                         [100%]
+16 passed in 0.02s
+
+  >>> A green suite does NOT demonstrate the change is correct.
+  >>> This is exactly the gap the auditor exists to close.

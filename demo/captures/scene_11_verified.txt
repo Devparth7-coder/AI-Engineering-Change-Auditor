@@ -1,0 +1,60 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 8 - HUMAN APPROVES, THEN THE FIX IS VERIFIED BY EXECUTION                                         │
+│ Four separate pytest runs, each in an isolated workspace                                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ curl -s -X POST /api/patches/1/approve \
+      -d '{"decided_by": "demo-reviewer", "note": "Evidence and reproduction reviewed."}'
+
+HTTP 200
+  public_id        P-1-001
+  approval_status  approved
+  decided_by       demo-reviewer
+  decision_note    Evidence and reproduction reviewed.
+  decided_at       2026-10-26T17:40:16
+
+  >>> The decision is attributed and timestamped. Verification cannot
+  >>> start until a human has made it.
+
+$ curl -s -X POST /api/patches/1/verify
+
+HTTP 200
+  patch_id                 1
+  outcome                  verified_for_tested_behavior
+  intended_tests_executed  True
+  regressions              0
+  runs executed            4
+
+  (the verify call took 1.0s of real test execution)
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE FOUR EXECUTED RUNS                                                                                 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  label                   status   exit  total  pass  fail  patch  isolation         ms     
+  ----------------------------------------------------------------------------------------------------
+  baseline_reproduction   failed   1     6      2     4     False  linux_namespace   245    
+  baseline_regression     passed   0     16     16    0     False  linux_namespace   239    
+  post_fix_reproduction   passed   0     6      6     0     True   linux_namespace   232    
+  post_fix_regression     passed   0     16     16    0     True   linux_namespace   235    
+
+  OUTCOME   not_attempted  ->  verified_for_tested_behavior
+  intended tests executed post-fix: True
+  regressions introduced:           0
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ WHAT THE SYSTEM REFUSES TO CLAIM                                                                       │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Verified behaviour is limited to 6 assertion(s) about `apply_discount`, executed under the recorded 
+isolation tier.
+
+  remaining concerns:
+    - Scope: verification covers 6 contract assertion(s) about `apply_discount`. It does NOT establish
+ that the application as a whole is correct.
+    - The regression suite contains 16 test(s); behaviour outside their coverage is unverified.
+    - Tests ran under the 'linux_namespace' isolation tier. For production use, run verification in th
+e container tier.
+    - Passing regression tests show no *detected* breakage, not the absence of breakage.
+    - The patch was applied only inside a throwaway audit workspace. Nothing was pushed, merged or dep
+loyed.

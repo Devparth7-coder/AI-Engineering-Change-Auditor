@@ -1,0 +1,60 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 7 - A PATCH IS PROPOSED, NEVER AUTO-APPLIED                                                       │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  public_id        P-1-001
+  approval_status  pending
+  verification     not_attempted
+
+  ORIGINAL CODE:
+    def apply_discount(price: float, discount_rate: float) -> float:
+        """Return the FINAL price payable after applying ``discount_rate``.
+    
+        Contract
+        --------
+        ``discount_rate`` is a fraction in ``[0, 1]``.  The returned value is the
+        amount the customer actually pays, i.e. the price *remaining* after the
+        discount is taken off -- not the size of the discount itself.
+
+  PROPOSED CODE:
+    def apply_discount(price: float, discount_rate: float) -> float:
+        """Return the FINAL price payable after applying ``discount_rate``.
+    
+        Contract
+        --------
+        ``discount_rate`` is a fraction in ``[0, 1]``.  The returned value is the
+        amount the customer actually pays, i.e. the price *remaining* after the
+        discount is taken off -- not the size of the discount itself.
+
+  UNIFIED DIFF:
+    --- a/src/discount_service/pricing.py
+    +++ b/src/discount_service/pricing.py
+    @@ -49,8 +49,7 @@
+         if not validate_discount_rate(discount_rate):
+             raise ValueError("discount_rate must be a fraction in [0, 1]")
+     
+    -    # simplified: discount is applied directly to the price
+    -    return price * discount_rate
+    +    return price * (1 - discount_rate)
+     
+     
+     def format_price(amount: float) -> str:
+
+  SIDE-EFFECT ANALYSIS:
+    - No other call sites of `apply_discount` were found in the analysed files, so the blast radiu
+    - The return value's magnitude changes (for the documented example, from the adjustment amount
+    - Behaviour at the domain edges is unchanged: a zero rate still returns the base value and a r
+    - The declared error contract (ValueError) is preserved; no validation behaviour is altered by
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ VERIFICATION IS REFUSED WITHOUT HUMAN APPROVAL                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ curl -s -X POST /api/patches/1/verify
+
+HTTP 409
+{
+  "detail": "Patch P-1-001 is 'pending'. Explicit human approval is required before verification: POST /api/patches/{id}/approve."
+}
+
+  >>> A generated patch is NEVER reported as a fix.

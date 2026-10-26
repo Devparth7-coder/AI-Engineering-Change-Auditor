@@ -1,0 +1,13 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE MANDATORY END-TO-END ACCEPTANCE TEST                                                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ cd backend && python ../tests/acceptance_e2e.py
+
+  91 checks passed
+  0 checks failed
+
+  ACCEPTANCE TEST PASSED -- 14 stages, 91 checks, 0 failures.
+
+  Every claim in this video was produced by a real execution:
+  real git revisions, real pytest runs, real isolated workspaces.

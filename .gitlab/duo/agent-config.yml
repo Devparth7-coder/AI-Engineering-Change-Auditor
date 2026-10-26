@@ -1,0 +1,45 @@
+# =============================================================================
+# GitLab Duo Agent Platform -- flow execution configuration
+# https://docs.gitlab.com/user/duo_agent_platform/flows/execution/agent-config-yaml/
+#
+# Read from the project's DEFAULT BRANCH only. Copies committed to other
+# branches are ignored, even when a flow runs from those branches.
+#
+# This file governs the environment in which agents/flows execute in CI/CD.
+# It is intentionally restrictive: the audit flow runs untrusted repository
+# code, so network egress is limited and no credentials are present.
+# =============================================================================
+
+# Python 3.12 image: matches the pytest execution environment the auditor's
+# reproduction tests are written for.
+image: python:3.12-slim
+
+setup_script:
+  - python -V
+  - pip install --no-cache-dir --upgrade pip
+  # pytest only. Deliberately no repository dependencies are installed here:
+  # the audit flow must not need network access to reproduce a defect, and
+  # installing arbitrary project requirements would widen the attack surface.
+  - pip install --no-cache-dir "pytest>=8,<10"
+  - if [ -f requirements.txt ]; then echo "requirements.txt present but NOT installed by policy"; fi
+
+# Cache pytest-related artefacts keyed on the flow definition.
+cache:
+  key:
+    files:
+      - agents/flows/change-audit/flow.yaml
+    prefix: duo-audit-flow
+  paths:
+    - .cache/pip
+
+# Network policy: the flow needs GitLab itself and the Python package index for
+# the setup script, and nothing else. Deny-by-default for everything else.
+# https://docs.gitlab.com/user/duo_agent_platform/flows/execution/agent-config-yaml/#configure-a-network-policy
+network_policy:
+  include_recommended_allowed: true
+  allow_all_unix_sockets: false
+  allowed_domains:
+    - pypi.org
+    - files.pythonhosted.org
+  denied_domains:
+    - "*"

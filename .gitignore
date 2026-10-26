@@ -1,0 +1,77 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.venv/
+venv/
+env/
+
+# --- Runtime state (SQLite dev DB, sandboxes, uploaded workspaces) ---
+# The application database and every temporary execution workspace live here.
+# They are generated artefacts and must never be committed: they can contain
+# source snapshots from audited repositories.
+var/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+sandbox/
+workspaces/
+tmp/
+
+# --- Secrets ---
+# Only the placeholder template is committed. Real values come from the
+# environment or a secret manager.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+build/
+dist/
+.next-swc/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.turbo/
+
+# --- Editors / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Test / CI artefacts ---
+junit.xml
+test-results/
+playwright-report/
+evaluation/results/*.json
+!evaluation/results/.gitkeep
+
+# --- Demo video intermediates ---
+# Rendered frames and mux intermediates are generated; the MP4 and the captured
+# transcripts are the deliverables and are committed.
+demo/frames/
+demo/_video.mp4
+demo/_audio.m44
+demo/_audio.m4a
+demo/audio/_silence.mp3
+demo/audio/concat.txt

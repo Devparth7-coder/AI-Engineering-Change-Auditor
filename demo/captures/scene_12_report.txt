@@ -1,0 +1,53 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 9 - THE FINAL REPORT                                                                              │
+│ An outcome label with an explanation, never a bare score                                               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  outcome            defect_reproduced_and_fix_verified
+  explanation        At least one defect was reproduced by executing a test against the original revisi
+on, a patch was approved by a human, and after applying it in an isolated workspac
+e the intended assertions passed with no previously-passing regression test broken
+. This is scoped to the tested behaviour only.
+
+  source revision    
+  target revision    
+
+  counts: {"findings": 2, "by_severity": {"critical": 1, "medium": 1}, "by_category": {"logic_error": 1, "missing_tests": 1}, "by_verification_status": {"fix_verified": 1, "inconclusive": 1}, "reproduced": 1, "not_reproduced": 0, "inconclusive": 1, "execution_error": 0, "patches_proposed": 1, "patches_approved": 1, "patches_rejected": 0, "fixes_verified": 1, "verification_failed": 0, "regressions": 0, "test_runs": 5, "tests_executed": 50, "tests_passed": 42, "tests_failed": 8, "tests_skipped": 0, "tests_errored": 0}
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ LIMITATIONS STATED BY THE SYSTEM ITSELF                                                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  - Verification establishes that specific contract assertions hold for the tested symbol under the test
+ed inputs. It does not establish that the application as a whole is correct.
+  - Findings are produced by deterministic static rules plus execution evidence. Absence of findings is 
+not proof of absence of defects.
+  - Confidence values are signal-agreement measures, not calibrated probabilities of defect. Only verifi
+cation_status records whether a defect was demonstrated.
+  - This audit ran in local demonstration mode against a bundled example repository. It did not use the 
+GitLab REST API or the Duo Agent Platform, and must not be presented as a live-platform result.
+  - The GitLab Duo Agent Platform was not used: GitLab credentials are not configured in this environmen
+t, so the Duo Agent Platform cannot be invoked. The audit ran on the local deterministic engine and 
+is labelled as such. Prerequisite: Set GITLAB_URL and GITLAB_TOKEN (PAT with `api` scope) for a Prem
+ium/Ultimate instance with GitLab Duo and the Agent Platform turned on, then set DUO_ENABLED=true.
+  - Tests executed under isolation tier(s): linux_namespace. Only the container tier provides a hard sec
+urity boundary for untrusted code.
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ REMAINING RISKS                                                                                        │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  - F-1-002 (medium, missing_tests) is inconclusive: unresolved. Generate and commit a test derived from
+ the declared contract. This finding is evidence-backed by a repository scan; it is not a defect in 
+itself and must not be reported as one.
+  - P-1-001 side effect: No other call sites of `apply_discount` were found in the analysed files, so th
+e blast radius appears limited to this function's direct callers.
+  - P-1-001 side effect: The return value's magnitude changes (for the documented example, from the adju
+stment amount to the amount remaining), so any cached, persisted or downstream-reported figures deri
+ved from it will change.
+  - P-1-001 side effect: Behaviour at the domain edges is unchanged: a zero rate still returns the base 
+value and a rate of 1.0 now returns 0 rather than the base value.
+  - P-1-001 side effect: The declared error contract (ValueError) is preserved; no validation behaviour 
+is altered by this patch.
+  - 5 run(s) executed under non-container isolation (linux_namespace). Container isolation is recommende
+d for production.

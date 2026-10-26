@@ -1,0 +1,75 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 4 - FINDINGS, WITH EVIDENCE ATTACHED                                                              │
+│ A hypothesis is not a finding until the repository corroborates it                                     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  public_id      F-1-001
+  rule           R-ARITH-001  (logic_error)
+  severity       critical
+  title          `apply_discount` returns the adjustment amount instead of the final amount required by its contract
+  location       src/discount_service/pricing.py:28-53
+  symbol         apply_discount
+
+  expected       For discount_rate=0.2, price=1000 the declared contract requires 800.
+  suspected      `apply_discount` returns `price * discount_rate`, i.e. the adjustment amount, not the amount remaining after the adjustment.
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ EVIDENCE ITEMS                                                                                         │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  #0  kind=diff_hunk       check=diff_mentions    src/discount_service/pricing.py:53-53
+       Return expression of `apply_discount` changed in this merge request.
+  #1  kind=source_excerpt  check=source_lines     src/discount_service/pricing.py:53-53
+       Current (source-revision) implementation of the offending return.
+  #2  kind=contract_quote  check=docstring_quote  src/discount_service/pricing.py:28-53
+       Declared contract states a net/final result.
+  #3  kind=ast_fact        check=analysis         src/discount_service/pricing.py:53-53
+       Structural classification of the return expression.
+  #4  kind=prior_revision  check=source_lines     src/discount_service/pricing.py:52-52
+       At the target revision `apply_discount` returned `price * (1 - discount_rate)` (classifi
+  #5  kind=contract_quote  check=docstring_quote  src/discount_service/pricing.py:29-None
+       Derivation of the expected value from the declared contract.
+
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ INDEPENDENT CORROBORATION                                                                              │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  corroborated   9
+  refuted        0
+  ratio          1.0
+
+  CONFIRMED FACTS (separated from hypotheses):
+    - return expression at source revision: price * discount_rate
+    - structural classification: component
+    - declared return semantics: net_remaining
+    - return expression at target revision: price * (1 - discount_rate)
+    - confirmed: `apply_discount` is defined at src/discount_service/pricing.py:28-53
+    - confirmed: evidence #0 (diff_hunk) - the change diff touches `src/discount_service/pricing.p
+    - confirmed: evidence #1 (source_excerpt) - quoted text matches src/discount_service/pricing.p
+    - confirmed: evidence #2 (contract_quote) - the quoted text appears verbatim in the declared d
+    - confirmed: evidence #3 (ast_fact) - derived artefact; the cited location exists in the sourc
+
+  HYPOTHESES (explicitly not facts):
+    - the author intended a percentage-style API and converted the call sites, but the docstring w
+    - the simplification dropped the complement factor by accident
+
+  confidence:
+{
+    "level": "high",
+    "signal_agreement_score": 1.0,
+    "basis": [
+        "declared return semantics = net_remaining (1 doc signal(s))",
+        "implementation classified as 'component' (1 structural signal(s))",
+        "the target revision computed the net result and this change removed it",
+        "a numeric worked example in the contract contradicts the code"
+    ],
+    "calibrated_on_labelled_corpus": false,
+    "interpretation": "signal_agreement_score counts independent repository signals that agree. It is not a probability that a defect exists; verification status, not this score, determines whether a defect is confirmed.",
+    "note": "Uncalibrated: no labelled corpus was used to fit this score. Treat as a triage ordering signal only.",
+    "post_investigation": {
+        "adjustment": 0.25,
+        "corroboration_ratio": 1.0,
+        "corroborated": 9,
+        "refuted": 0
+    }
+}

@@ -1,0 +1,39 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ STEP 1 - CONNECT: WHAT CAN THIS SYSTEM ACTUALLY DO?                                                    │
+│ GET /api/health reports verified capability, not an optimistic constant                                │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ curl -s -X GET /api/health
+
+HTTP 200
+  status = ok
+  app = AI Engineering Change Auditor
+  version = 1.0.0
+  environment = development
+  database = connected
+  database_dialect = sqlite
+    isolation.configured_mode = auto
+    isolation.selected_isolation_level = linux_namespace
+      isolation.container.available = false
+      isolation.container.reason = docker binary not found
+      isolation.linux_namespace.available = true
+      isolation.process_restricted.available = true
+    isolation.network_disabled_by_default = true
+    gitlab.configured = false
+    gitlab.reachable = false
+    gitlab.note = GITLAB_URL/GITLAB_TOKEN are not set. Local demonstration …
+    duo.available = false
+    duo.reason = GitLab credentials are not configured in this environment…
+    duo.missing_prerequisite = Set GITLAB_URL and GITLAB_TOKEN (PAT with `api` scope) fo…
+        duo.checks[0].name = gitlab_configured
+        duo.checks[0].passed = false
+        duo.checks[0].detail = GITLAB_URL and/or GITLAB_TOKEN are not set in this enviro…
+    duo.flow_definition = change-audit/v1
+    duo.flow_config_path = agents/flows/change-audit/flow.yaml
+    duo.engine_used_when_unavailable = local_deterministic
+    demo.status = ready
+    demo.path = /home/user/engineering-change-auditor/examples/discount-s…
+    demo.detail = fixture verified against both revisions
+    demo.main_sha = eeacc8cf0b65
+    demo.source_sha = 68cde28c679f
+  … (further fields omitted for legibility; all values above are real)

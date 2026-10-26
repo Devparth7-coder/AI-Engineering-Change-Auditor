@@ -1,0 +1,18 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ THE GITLAB DUO AGENT PLATFORM ARTEFACTS ARE VALIDATED IN CI                                            │
+│ agents/flows/change-audit/flow.yaml  +  .gitlab/duo/agent-config.yml                                   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ python agents/validate_flow.py
+Validating flow definition: /home/user/engineering-change-auditor/agents/flows/change-audit/flow.yaml
+Validating execution config:  /home/user/engineering-change-auditor/.gitlab/duo/agent-config.yml
+
+25 check(s) passed, 0 warning(s), 0 error(s)
+FLOW VALIDATION PASSED
+
+NOTE: passing validation means the YAML conforms to the documented Flow Registry v1 schema and this proj
+ect's least-privilege policy. It does NOT mean the flow is registered or executable -- that requires a G
+itLab instance with Duo Agent Platform enabled. Check GET /api/duo/availability.
+
+  exit code 0 - a missing or invalid flow definition FAILS the build.
+  Agent jobs never report success when they were skipped.

@@ -1,0 +1,23 @@
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ GITLAB DUO AGENT PLATFORM - REPORTED HONESTLY                                                          │
+│ The mandatory integration is not faked when credentials are absent                                     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+$ curl -s -X GET /api/duo/availability
+
+HTTP 200
+  available = false
+  reason = GitLab credentials are not configured in this environment…
+  missing_prerequisite = Set GITLAB_URL and GITLAB_TOKEN (PAT with `api` scope) fo…
+      checks[0].name = gitlab_configured
+      checks[0].passed = false
+      checks[0].detail = GITLAB_URL and/or GITLAB_TOKEN are not set in this enviro…
+  flow_definition = change-audit/v1
+  flow_config_path = agents/flows/change-audit/flow.yaml
+  flow_yaml_present = true
+  flow_yaml_path = /home/user/engineering-change-auditor/agents/flows/change…
+  engine_used_when_unavailable = local_deterministic
+
+  >>> No GitLab credentials exist in this environment, so the Duo Agent
+  >>> Platform cannot be invoked. The system says so, names the missing
+  >>> prerequisite, and falls back to a clearly-labelled local engine.
