@@ -1,0 +1,6 @@
+{
+  "case_id": "clean-additive",
+  "title": "adds a new documented, tested function; contract of existing code kept",
+  "injected_defect": null,
+  "fix_expected": false
+}

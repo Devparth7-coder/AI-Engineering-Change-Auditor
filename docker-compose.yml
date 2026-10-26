@@ -1,0 +1,75 @@
+# Local/deployment composition: PostgreSQL (production database target with
+# JSONB), the FastAPI backend, and the Next.js dashboard.
+#
+#   docker compose up --build
+#
+# The frontend proxies /api/* to the backend service, so only port 3000 needs
+# to be exposed for normal use; 8000 is published for direct API inspection
+# during development (remove the mapping in production).
+#
+# NOTE on isolation tiers (docs/security.md): inside a container the
+# linux-namespace executor depends on host user-namespace support.  The
+# backend probes its capabilities at startup and reports the tier it can
+# actually enforce on GET /api/health; it never claims a stronger tier.
+
+name: engineering-change-auditor
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auditor
+      # Development-only placeholder.  Override with a secret in any real
+      # deployment; never reuse this value.
+      POSTGRES_PASSWORD: change-me-dev-only
+      POSTGRES_DB: auditor
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auditor -d auditor"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://auditor:change-me-dev-only@db:5432/auditor
+      GITLAB_URL: ""
+      GITLAB_TOKEN: ""
+      DUO_ENABLED: "false"
+      DEMO_ENABLED: "true"
+      SANDBOX_MODE: auto
+      SANDBOX_ROOT: /srv/var/sandboxes
+      # Override in deployment via secrets, never here:
+      API_AUTH_TOKEN: ""
+    ports:
+      - "8000:8000"
+    volumes:
+      - vardata:/srv/var
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+  vardata:

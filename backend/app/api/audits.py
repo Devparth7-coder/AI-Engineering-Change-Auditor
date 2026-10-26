@@ -14,7 +14,6 @@ from app.models import (
     AgentEvent,
     AgentRole,
     EventType,
-    AuditReport,
     AuditSession,
     AuditStatus,
     EngineKind,
@@ -23,7 +22,6 @@ from app.models import (
     Project,
     TestRun,
     TERMINAL_AUDIT_STATUSES,
-    utcnow,
 )
 from app.schemas import (
     AckResponse,
@@ -34,7 +32,6 @@ from app.schemas import (
     FindingSummary,
     PatchResponse,
     ReportResponse,
-    TestRunResponse,
 )
 from app.services import gitrepo, orchestrator, store
 from .findings import run_to_response
@@ -44,8 +41,6 @@ from .deps import (
     get_audit_or_404,
     get_project_or_404,
     require_auth,
-    resolve_finding,
-    resolve_patch,
 )
 
 router = APIRouter(tags=["audits"])
@@ -387,7 +382,7 @@ def list_findings(
 ) -> dict[str, Any]:
     audit = get_audit_or_404(session, audit_id)
     assert_audit_access(session, audit, settings)
-    from .findings import finding_to_response, run_to_response
+    from .findings import finding_to_response
 
     stmt = select(Finding).where(Finding.audit_id == audit_id).order_by(Finding.id)
     if severity:

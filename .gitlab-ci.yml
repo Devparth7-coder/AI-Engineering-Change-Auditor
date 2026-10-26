@@ -1,0 +1,227 @@
+# CI pipeline for the AI Engineering Change Auditor.
+#
+# Stages (in order): deps -> lint -> backend tests -> frontend tests ->
+# integration -> agent workflow validation -> build -> optional deploy.
+#
+# Honesty rule enforced here: the agent-validation job FAILS (exit 2 from
+# agents/validate_flow.py) when the Flow Registry YAML or the agent config is
+# missing or malformed.  A skipped or absent agent configuration can never be
+# reported as success — the job additionally asserts the validator's failure
+# mode on an empty directory.
+
+stages:
+  - deps
+  - lint
+  - backend-tests
+  - frontend-tests
+  - integration
+  - agent-validation
+  - build
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
+  npm_config_cache: $CI_PROJECT_DIR/.cache/npm
+  PYTHONUNBUFFERED: "1"
+
+.default_rules: &default_rules
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# ---------------------------------------------------------------------------
+# deps
+# ---------------------------------------------------------------------------
+deps:backend:
+  stage: deps
+  image: python:3.12-slim
+  <<: *default_rules
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths: [.cache/pip]
+  script:
+    - python3 -m pip install --upgrade pip
+    - pip install -r backend/requirements-dev.txt
+    - python3 -c "import fastapi, sqlalchemy, alembic, pydantic, httpx; print('backend deps ok')"
+
+deps:frontend:
+  stage: deps
+  image: node:20-alpine
+  <<: *default_rules
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths: [.cache/npm]
+  script:
+    - cd frontend
+    - npm ci --cache $CI_PROJECT_DIR/.cache/npm
+    - npx next --version
+
+# ---------------------------------------------------------------------------
+# lint / static
+# ---------------------------------------------------------------------------
+lint:backend:
+  stage: lint
+  image: python:3.12-slim
+  <<: *default_rules
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths: [.cache/pip]
+    policy: pull
+  script:
+    - pip install -r backend/requirements-dev.txt
+    - python3 -m compileall -q backend/app backend/tests tests agents
+    - ruff check --select E9,F backend/app backend/tests tests agents
+    - python3 -m pyflakes --version 2>/dev/null || true
+
+lint:frontend:
+  stage: lint
+  image: node:20-alpine
+  <<: *default_rules
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths: [.cache/npm]
+    policy: pull
+  script:
+    - cd frontend
+    - npm ci --cache $CI_PROJECT_DIR/.cache/npm
+    - npm run lint -- --max-warnings=0
+
+# ---------------------------------------------------------------------------
+# backend tests (unit)
+# ---------------------------------------------------------------------------
+test:backend:
+  stage: backend-tests
+  image: python:3.12-slim
+  <<: *default_rules
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths: [.cache/pip]
+    policy: pull
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends git util-linux
+    - pip install -r backend/requirements-dev.txt
+    - cd backend
+    - python3 -m pytest tests -q --maxfail=1
+  artifacts:
+    when: on_failure
+    paths: [backend/.pytest_cache]
+
+# ---------------------------------------------------------------------------
+# frontend tests (typecheck + build)
+# ---------------------------------------------------------------------------
+test:frontend:
+  stage: frontend-tests
+  image: node:20-alpine
+  <<: *default_rules
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths: [.cache/npm]
+    policy: pull
+  script:
+    - cd frontend
+    - npm ci --cache $CI_PROJECT_DIR/.cache/npm
+    - npx tsc --noEmit
+    - npm run build
+
+# ---------------------------------------------------------------------------
+# integration: the mandatory end-to-end acceptance test
+# ---------------------------------------------------------------------------
+test:integration:
+  stage: integration
+  image: python:3.12-slim
+  timeout: 45m
+  <<: *default_rules
+  cache:
+    key: pip-$CI_COMMIT_REF_SLUG
+    paths: [.cache/pip]
+    policy: pull
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends git util-linux
+    - pip install -r backend/requirements-dev.txt
+    - cd backend
+    - PYTHONPATH=. python3 ../tests/acceptance_e2e.py
+  artifacts:
+    when: always
+    paths: []
+
+# ---------------------------------------------------------------------------
+# GitLab Duo Agent Platform workflow validation
+# ---------------------------------------------------------------------------
+validate:agent-workflows:
+  stage: agent-validation
+  image: python:3.12-slim
+  <<: *default_rules
+  script:
+    - pip install pyyaml
+    # 1. The shipped flow + agent config must validate (exit 0).
+    - python3 agents/validate_flow.py
+        --flow agents/flows/change-audit/flow.yaml
+        --agent-config .gitlab/duo/agent-config.yml
+    # 2. Prove the failure mode: with NO configuration present the validator
+    #    must exit 2 ("prerequisite missing"), never 0.  A pipeline that
+    #    silently skips agent validation is a false green.
+    - |
+      empty="$(mktemp -d)"
+      set +e
+      python3 agents/validate_flow.py --flow "$empty/absent.yaml" --agent-config "$empty/absent.yml" >/dev/null 2>&1
+      code=$?
+      set -e
+      if [ "$code" -ne 2 ]; then
+        echo "FATAL: validate_flow.py exited $code on an absent flow; expected 2 (missing prerequisite must fail loudly)."
+        exit 1
+      fi
+      echo "negative check ok: absent agent config exits 2, not success"
+    # 3. A deliberately broken flow must exit 1 with the error list.
+    - |
+      bad="$(mktemp -d)"
+      printf 'version: 1\nenvironment: ambient\ncomponents: {}\nflow:\n  start_component: nope\n' > "$bad/broken.yaml"
+      set +e
+      python3 agents/validate_flow.py --flow "$bad/broken.yaml" --agent-config .gitlab/duo/agent-config.yml >/dev/null 2>&1
+      code=$?
+      set -e
+      if [ "$code" -ne 1 ]; then
+        echo "FATAL: validate_flow.py exited $code on a malformed flow; expected 1."
+        exit 1
+      fi
+      echo "negative check ok: malformed flow exits 1, not success"
+
+# ---------------------------------------------------------------------------
+# build
+# ---------------------------------------------------------------------------
+build:images:
+  stage: build
+  image: docker:27
+  services: [docker:27-dind]
+  <<: *default_rules
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+  script:
+    - docker build --target backend -t "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA" .
+    - docker build --target frontend -t "$CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA" .
+    - if [ -n "$CI_REGISTRY_USER" ]; then echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"; fi
+    - if [ -n "$CI_REGISTRY_USER" ]; then docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA" && docker push "$CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA"; fi
+
+# ---------------------------------------------------------------------------
+# optional deploy (manual, fails loudly when unconfigured)
+# ---------------------------------------------------------------------------
+deploy:optional:
+  stage: deploy
+  image: alpine:3.20
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+  script:
+    - |
+      if [ -z "$DEPLOY_TARGET" ]; then
+        echo "deploy skipped by configuration: DEPLOY_TARGET is not set."
+        echo "This job is optional; set DEPLOY_TARGET (and credentials) in CI/CD variables to enable it."
+        echo "Refusing to report a deployment that did not happen: exiting 1."
+        exit 1
+      fi
+      echo "deploying $CI_COMMIT_SHORT_SHA to $DEPLOY_TARGET"
+      # Real deployment commands go here (e.g. kubectl/ssh/helm).  They are
+      # intentionally absent until a target environment exists.
+      exit 1

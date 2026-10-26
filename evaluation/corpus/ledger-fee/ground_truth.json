@@ -1,0 +1,12 @@
+{
+  "case_id": "ledger-fee",
+  "title": "remaining_after_fee treats a fraction as a percentage",
+  "injected_defect": {
+    "file": "src/ledger/core.py",
+    "function": "remaining_after_fee",
+    "expected_expression": "amount * (1 - fee_fraction)",
+    "injected_expression": "amount * fee_fraction"
+  },
+  "fix_expected": true,
+  "note": "percentage-vs-fraction confusion: returns the fee portion instead of the remainder"
+}

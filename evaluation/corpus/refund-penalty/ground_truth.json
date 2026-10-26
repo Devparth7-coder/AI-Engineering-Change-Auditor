@@ -1,0 +1,11 @@
+{
+  "case_id": "refund-penalty",
+  "title": "refund_after_penalty returns the penalty portion instead of the remainder",
+  "injected_defect": {
+    "file": "src/refunds/core.py",
+    "function": "refund_after_penalty",
+    "expected_expression": "payment * (1 - penalty_fraction)",
+    "injected_expression": "payment * penalty_fraction"
+  },
+  "fix_expected": true
+}

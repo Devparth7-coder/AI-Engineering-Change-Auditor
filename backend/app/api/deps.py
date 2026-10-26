@@ -15,7 +15,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
-from app.db import get_db
 from app.models import AuditSession, Finding, PatchProposal, Project
 
 _window: dict[str, deque[float]] = defaultdict(deque)

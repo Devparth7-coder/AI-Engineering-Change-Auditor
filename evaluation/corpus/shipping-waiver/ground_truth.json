@@ -1,0 +1,11 @@
+{
+  "case_id": "shipping-waiver",
+  "title": "shipping_cost returns the waiver portion instead of the remaining cost",
+  "injected_defect": {
+    "file": "src/shipping/core.py",
+    "function": "shipping_cost",
+    "expected_expression": "base_cost * (1 - waiver_fraction)",
+    "injected_expression": "base_cost * waiver_fraction"
+  },
+  "fix_expected": true
+}

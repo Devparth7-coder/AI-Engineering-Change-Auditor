@@ -36,7 +36,7 @@ from .duo import (
     build_audit_goal,
 )
 from .gitlab_client import GitLabClient, GitLabError, GitLabNotConfigured
-from .pytest_runner import classify_reproduction, match_intended, run_pytest, summarise_output
+from .pytest_runner import classify_reproduction, run_pytest, summarise_output
 from .repo_source import GitRevisionSource, StaticRevisionSource, is_test_path
 from .reporting import build_report
 from .verification import verify_patch as run_verification
@@ -61,7 +61,7 @@ from app.models import (
     VerificationStatus,
     utcnow,
 )
-from app.security.sanitize import detect_injection, fence_untrusted, sanitize_value
+from app.security.sanitize import detect_injection, sanitize_value
 
 logger = logging.getLogger(__name__)
 

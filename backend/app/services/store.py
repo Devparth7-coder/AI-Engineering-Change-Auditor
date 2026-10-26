@@ -6,7 +6,7 @@ share one implementation of "how an audit is written down".
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -20,10 +20,7 @@ from app.models import (
     AuditStatus,
     EngineKind,
     EventType,
-    Finding,
-    PatchProposal,
     Project,
-    TestRun,
     utcnow,
 )
 

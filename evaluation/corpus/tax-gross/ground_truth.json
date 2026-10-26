@@ -1,0 +1,12 @@
+{
+  "case_id": "tax-gross",
+  "title": "gross_price returns the tax portion instead of net plus tax",
+  "injected_defect": {
+    "file": "src/taxing/core.py",
+    "function": "gross_price",
+    "expected_expression": "net_price * (1 + tax_rate)",
+    "injected_expression": "net_price * tax_rate"
+  },
+  "fix_expected": true,
+  "note": "additive/gross contract: outside the v1 R-ARITH-001 semantics classes (net vs adjustment). Expected to be MISSED by the local engine; kept in the corpus so the benchmark measures this gap instead of hiding it."
+}

@@ -1,0 +1,6 @@
+{
+  "case_id": "clean-refactor",
+  "title": "extracts a helper without changing observable behaviour",
+  "injected_defect": null,
+  "fix_expected": false
+}

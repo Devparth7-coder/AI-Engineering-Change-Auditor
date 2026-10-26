@@ -20,7 +20,6 @@ from .base import (
     CHECK_SOURCE_LINES,
     Evidence,
     FindingDraft,
-    RepairHint,
     RuleContext,
     confidence,
 )

@@ -86,7 +86,7 @@ def _read_git(repo: Path, *args: str) -> str:
             ["git", *args], cwd=str(repo), capture_output=True, text=True,
             timeout=30, check=False,
         )
-    except (OSError, subprocess.SubprocessError) as exc:  # pragma: no cover
+    except (OSError, subprocess.SubprocessError):  # pragma: no cover
         return ""
     return proc.stdout.strip() if proc.returncode == 0 else ""
 

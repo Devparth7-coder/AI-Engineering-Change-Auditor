@@ -25,7 +25,6 @@ timed out                     EXECUTION_ERROR
 
 from __future__ import annotations
 
-import re
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -292,7 +291,7 @@ def _classify(
     notes: list[str] = []
     if result.timed_out:
         notes.append(
-            f"execution exceeded the timeout; a timeout is NEVER treated as a passing run"
+            "execution exceeded the timeout; a timeout is NEVER treated as a passing run"
         )
         return TestRunStatus.TIMEOUT, notes
 

@@ -26,7 +26,6 @@ from . import sandbox
 from .pytest_runner import (
     PytestReport,
     classify_reproduction,
-    match_intended,
     run_pytest,
     summarise_output,
 )

@@ -17,7 +17,6 @@ is the guard against invented code locations and fabricated results.
 
 from __future__ import annotations
 
-import ast
 import difflib
 import re
 from dataclasses import dataclass, field

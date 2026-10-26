@@ -13,7 +13,6 @@ from app.db import get_db
 from app.models import ApprovalStatus, PatchProposal, VerificationOutcome
 from app.schemas import DecisionRequest, PatchResponse, VerificationResponse
 from app.services import orchestrator, store
-from app.services.reporting import OUTCOME_EXPLANATIONS
 from .findings import patch_to_response
 from .deps import require_auth, resolve_patch
 

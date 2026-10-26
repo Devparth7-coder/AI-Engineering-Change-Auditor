@@ -1,0 +1,10 @@
+{
+  "case_id": "format-untested-change",
+  "title": "format_price rounding changed with no test asserting the new behaviour",
+  "injected_defect": null,
+  "expected_aux_finding": {
+    "rule_id": "R-TEST-001",
+    "function": "format_price"
+  },
+  "fix_expected": false
+}

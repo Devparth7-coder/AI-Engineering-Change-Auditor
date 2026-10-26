@@ -13,19 +13,14 @@ from app.db import get_db
 from app.models import (
     AgentRole,
     ApprovalStatus,
-    AuditStatus,
-    EngineKind,
     EventType,
     Finding,
-    IsolationLevel,
     PatchProposal,
     Project,
     ReproOutcome,
     TestRun,
-    TestType,
     VerificationOutcome,
     VerificationStatus,
-    utcnow,
 )
 from app.schemas import (
     FindingResponse,
@@ -34,9 +29,7 @@ from app.schemas import (
     PatchResponse,
     TestRunResponse,
 )
-from app.services import orchestrator, patching, sandbox, store, testgen
-from app.services.analysis.engine import ChangeBundle
-from app.services.pytest_runner import classify_reproduction, run_pytest, summarise_output
+from app.services import orchestrator, patching, store, testgen
 from .deps import require_auth, resolve_finding
 
 router = APIRouter(tags=["findings"])

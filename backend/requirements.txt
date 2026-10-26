@@ -1,0 +1,14 @@
+# Runtime dependencies of the FastAPI backend.
+# Versions are floor-pinned: the project is developed against these or newer.
+# The SQLite development fallback needs no database driver; PostgreSQL
+# deployments (docker-compose, production) use psycopg 3 via the URL scheme
+# ``postgresql+psycopg://``.
+fastapi>=0.115,<1.0
+uvicorn>=0.30
+sqlalchemy>=2.0,<3.0
+alembic>=1.13
+pydantic>=2.7,<3.0
+pydantic-settings>=2.3
+python-multipart>=0.0.9
+httpx>=0.27
+psycopg[binary]>=3.2 ; python_version >= "3.8"

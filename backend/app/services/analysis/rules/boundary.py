@@ -13,7 +13,6 @@ from typing import Any
 
 from ..astutil import (
     comparisons_in,
-    function_at_line,
     lines_of,
     normalize_expr,
 )
@@ -22,7 +21,6 @@ from .base import (
     CHECK_SOURCE_LINES,
     Evidence,
     FindingDraft,
-    RepairHint,
     RuleContext,
     confidence,
 )

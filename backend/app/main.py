@@ -23,8 +23,7 @@ from .api import audits, findings, patches, projects, system
 from .config import get_settings
 from .db import init_db
 from .security.sanitize import register_secret, sanitize_text
-from .services import demo_repo, orchestrator, sandbox
-from .services.duo import DuoAgentPlatformClient
+from .services import demo_repo, sandbox
 
 logger = logging.getLogger("auditor")
 

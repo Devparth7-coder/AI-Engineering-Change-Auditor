@@ -145,7 +145,6 @@ def _num(text: str) -> float | None:
 def _classify_semantics(name: str, docstring: str) -> tuple[ReturnSemantics, list[str]]:
     """Decide whether the declared contract promises a NET value or a COMPONENT."""
     hay_name = name.lower().replace("_", " ")
-    hay_doc = docstring.lower()
     evidence: list[str] = []
 
     # Explicit "returns the X" statements carry the most weight.

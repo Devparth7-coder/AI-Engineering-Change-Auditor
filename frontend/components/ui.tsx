@@ -293,26 +293,29 @@ export function usePoll<T>(
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
   const loaderRef = useRef(loader);
-  loaderRef.current = loader;
+  // Keep the ref fresh without touching it during render (React compiler rule).
+  useEffect(() => {
+    loaderRef.current = loader;
+  }, [loader]);
 
   useEffect(() => {
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const run = async () => {
+      setLoading(true);
       try {
         const v = await loaderRef.current();
         if (!alive) return;
         setData(v);
         setError(null);
-      } catch (e: any) {
+      } catch (e) {
         if (!alive) return;
-        setError(e?.message || String(e));
+        setError(e instanceof Error ? e.message : String(e));
       } finally {
         if (alive) setLoading(false);
       }
       if (alive && intervalMs) timer = setTimeout(run, intervalMs);
     };
-    setLoading(true);
     run();
     return () => {
       alive = false;
